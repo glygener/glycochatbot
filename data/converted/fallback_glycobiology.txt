@@ -1,0 +1,9 @@
+Glycobiology is the study of carbohydrate structures and their biological roles. Glycans are complex carbohydrates that play crucial roles in cell recognition, immune responses, and protein folding. They are found on the surface of cells and in extracellular matrices.
+
+N-glycans are carbohydrates attached to asparagine residues in proteins. They are critical for protein folding and stability. N-glycosylation occurs in the endoplasmic reticulum and Golgi apparatus, involving a series of enzymatic reactions.
+
+O-glycans are carbohydrates attached to serine or threonine residues. Unlike N-glycans, O-glycosylation can occur in multiple cellular compartments. O-glycans are particularly important in mucins and other secreted proteins.
+
+Glycoproteins are proteins that contain covalently attached carbohydrates. About 50% of all proteins in the blood are glycoproteins. They include antibodies, hormones, enzymes, and structural proteins that are crucial for various biological functions.
+
+The lectin pathway of complement activation is triggered by binding of mannose-binding lectin (MBL) to glycans on pathogen surfaces. This is an important innate immune mechanism that does not require prior sensitization.
