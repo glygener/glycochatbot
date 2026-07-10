@@ -25,9 +25,11 @@ class RAGConfig:
         project_root = find_project_root(start)
         load_dotenv(project_root / ".env")
 
+        data_dir = Path(os.getenv("DATA_DIR", project_root / "data"))
+
         return cls(
             project_root=project_root,
-            chroma_dir=project_root / "data" / "chroma",
+            chroma_dir=data_dir / "chroma",
         )
 
     @property

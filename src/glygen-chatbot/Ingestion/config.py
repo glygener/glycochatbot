@@ -28,10 +28,20 @@ class IngestionConfig:
         project_root = find_project_root(start)
         load_dotenv(project_root / ".env")
 
+        pdf_path = os.getenv("PDF_PATH")
+        if pdf_path:
+            resolved_pdf = Path(pdf_path)
+        else:
+            resolved_pdf = (
+                project_root / "Essential_of_Glycobiology_4E_EPUB_V5_InterVenn.pdf"
+            )
+
+        data_dir = Path(os.getenv("DATA_DIR", project_root / "data"))
+
         return cls(
             project_root=project_root,
-            pdf_path=project_root / "Essential_of_Glycobiology_4E_EPUB_V5_InterVenn.pdf",
-            chroma_dir=project_root / "data" / "chroma",
+            pdf_path=resolved_pdf,
+            chroma_dir=data_dir / "chroma",
         )
 
     @property

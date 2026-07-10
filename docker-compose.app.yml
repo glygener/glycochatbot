@@ -1,0 +1,50 @@
+name: glygen
+
+services:
+  chromadb:
+    image: chromadb/chroma:0.6.3
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    depends_on:
+      - chromadb
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      DATA_DIR: /app/data
+    volumes:
+      - chat_data:/app/data
+      - hf_cache:/root/.cache/huggingface
+    command: uvicorn api.server:app --host 0.0.0.0 --port 8000
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+    environment:
+      GLYGEN_API_URL: http://backend:8000
+
+volumes:
+  chroma_data:
+    name: glygen_chroma_data
+  chat_data:
+  hf_cache:

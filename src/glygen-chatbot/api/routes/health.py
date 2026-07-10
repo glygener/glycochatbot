@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 
 from api.dependencies import get_session_store
-from api.schemas import HealthResponse, SessionCreateResponse
+from api.schemas import HealthResponse
 from query.config import RAGConfig
+from retrieval.chroma_client import ChromaSettings, chroma_is_ready
 
 router = APIRouter(tags=["health"])
 
@@ -11,8 +12,12 @@ router = APIRouter(tags=["health"])
 def health() -> HealthResponse:
     config = RAGConfig.from_env()
     store = get_session_store()
+    chroma_settings = ChromaSettings.from_env(
+        collection_name=config.collection_name,
+        chroma_dir=config.chroma_dir,
+    )
     return HealthResponse(
         status="ok",
-        chroma_ready=config.chroma_dir.exists(),
+        chroma_ready=chroma_is_ready(chroma_settings),
         database_ready=store.db_path.exists(),
     )

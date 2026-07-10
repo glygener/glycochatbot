@@ -23,6 +23,12 @@ class SessionCreateResponse(BaseModel):
     created_at: str
 
 
+class SessionSummaryResponse(BaseModel):
+    session_id: str
+    created_at: str
+    preview: str
+
+
 class MessageItem(BaseModel):
     id: str
     role: str
@@ -50,6 +56,7 @@ class StatusResponse(BaseModel):
     llm_model: str
     collection_name: str
     chroma_dir: str
+    chroma_host: str | None = None
 
 
 def rag_to_chat(

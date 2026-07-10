@@ -2,6 +2,8 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from retrieval.chroma_client import ChromaSettings, load_vectorstore, store_documents
+
 from .chunker import chunk_documents
 from .config import IngestionConfig
 from .embedder import create_embeddings
@@ -13,6 +15,12 @@ class IngestionPipeline:
         self.config = config or IngestionConfig.from_env()
         self.embeddings: HuggingFaceEmbeddings | None = None
         self.vectorstore: Chroma | None = None
+
+    def _chroma_settings(self) -> ChromaSettings:
+        return ChromaSettings.from_env(
+            collection_name=self.config.collection_name,
+            chroma_dir=self.config.chroma_dir,
+        )
 
     def load(self) -> list[Document]:
         return load_pdf(self.config.pdf_path)
@@ -26,23 +34,12 @@ class IngestionPipeline:
         return self.embeddings
 
     def store(self, chunks: list[Document]) -> Chroma:
-        self.config.chroma_dir.mkdir(parents=True, exist_ok=True)
         embeddings = self.get_embeddings()
-
-        self.vectorstore = Chroma.from_documents(
-            documents=chunks,
-            embedding=embeddings,
-            collection_name=self.config.collection_name,
-            persist_directory=str(self.config.chroma_dir),
-        )
+        self.vectorstore = store_documents(self._chroma_settings(), embeddings, chunks)
         return self.vectorstore
 
     def load_vectorstore(self) -> Chroma:
-        self.vectorstore = Chroma(
-            collection_name=self.config.collection_name,
-            embedding_function=self.get_embeddings(),
-            persist_directory=str(self.config.chroma_dir),
-        )
+        self.vectorstore = load_vectorstore(self._chroma_settings(), self.get_embeddings())
         return self.vectorstore
 
     def run(self) -> Chroma:
@@ -62,8 +59,12 @@ if __name__ == "__main__":
     query = "What are glycans?"
     results = pipeline.similarity_search(query, k=3)
 
+    settings = pipeline._chroma_settings()
     print(f"Stored in collection: {pipeline.config.collection_name}")
-    print(f"Persist directory: {pipeline.config.chroma_dir}")
+    if settings.use_http:
+        print(f"Chroma server: {settings.host}:{settings.port}")
+    else:
+        print(f"Persist directory: {pipeline.config.chroma_dir}")
     print(f"\nQuery: {query}\n")
 
     for i, doc in enumerate(results, start=1):

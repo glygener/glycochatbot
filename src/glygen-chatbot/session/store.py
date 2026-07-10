@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import uuid
 from dataclasses import dataclass
@@ -6,6 +7,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from Ingestion.config import find_project_root
+
+
+def _resolve_db_path(db_path: Path | None) -> Path:
+    if db_path is not None:
+        return db_path
+    root = find_project_root()
+    data_dir = Path(os.getenv("DATA_DIR", root / "data"))
+    return data_dir / "chat.db"
 
 
 def _utc_now() -> str:
@@ -39,8 +48,7 @@ class MessageRecord:
 
 class SessionStore:
     def __init__(self, db_path: Path | None = None) -> None:
-        root = find_project_root()
-        self.db_path = db_path or (root / "data" / "chat.db")
+        self.db_path = _resolve_db_path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 

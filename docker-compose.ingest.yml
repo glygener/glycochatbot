@@ -1,0 +1,36 @@
+name: glygen
+
+services:
+  chromadb:
+    image: chromadb/chroma:0.6.3
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    depends_on:
+      - chromadb
+    env_file:
+      - .env
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      PDF_PATH: /data/book.pdf
+    volumes:
+      - ./Essential_of_Glycobiology_4E_EPUB_V5_InterVenn.pdf:/data/book.pdf:ro
+      - hf_cache:/root/.cache/huggingface
+    command: python -m Ingestion.pipeline
+    restart: "no"
+
+volumes:
+  chroma_data:
+    name: glygen_chroma_data
+  hf_cache:

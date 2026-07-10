@@ -11,3 +11,16 @@ wheels/
 
 # Secrets
 .env
+
+# Textbook / documents
+*.pdf
+
+# Local data (vectors, chat DB, extracts)
+data/
+!data/.gitkeep
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

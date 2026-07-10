@@ -1,4 +1,5 @@
 import json
+import os
 
 from fastapi import HTTPException
 
@@ -204,4 +205,5 @@ class ChatOrchestrator:
             "llm_model": config.llm_model,
             "collection_name": config.collection_name,
             "chroma_dir": str(config.chroma_dir),
+            "chroma_host": os.getenv("CHROMA_HOST"),
         }

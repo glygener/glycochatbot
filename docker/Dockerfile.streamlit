@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app/src/glygen-chatbot
+
+ENV PYTHONPATH=/app/src/glygen-chatbot
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --no-cache-dir streamlit requests python-dotenv
+
+COPY src/glygen-chatbot/api/streamlit_app.py ./api/streamlit_app.py
+COPY src/glygen-chatbot/api/http_client.py ./api/http_client.py
+
+CMD ["streamlit", "run", "api/streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]

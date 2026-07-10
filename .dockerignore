@@ -1,0 +1,27 @@
+# Git and Python
+.git
+.gitignore
+.venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Secrets and local data
+.env
+data/chroma
+data/chat.db
+
+# Notebooks and docs (not needed in images)
+*.ipynb
+plan.md
+
+# IDE
+.cursor
+.vscode
+.idea
+
+# Large PDF (mounted as volume at runtime)
+*.pdf
