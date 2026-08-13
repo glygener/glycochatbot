@@ -7,7 +7,7 @@ from retrieval.chroma_client import ChromaSettings, load_vectorstore, store_docu
 from .chunker import chunk_documents
 from .config import IngestionConfig
 from .embedder import create_embeddings
-from .loader import load_pdf
+from .loader import load_documents
 
 
 class IngestionPipeline:
@@ -23,7 +23,7 @@ class IngestionPipeline:
         )
 
     def load(self) -> list[Document]:
-        return load_pdf(self.config.pdf_path)
+        return load_documents(self.config.pdf_path)
 
     def chunk(self, documents: list[Document]) -> list[Document]:
         return chunk_documents(documents, self.config)

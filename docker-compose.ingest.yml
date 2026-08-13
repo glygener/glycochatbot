@@ -10,22 +10,35 @@ services:
     environment:
       IS_PERSISTENT: "TRUE"
       ANONYMIZED_TELEMETRY: "FALSE"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/heartbeat')\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   ingestion:
     build:
       context: .
       dockerfile: docker/Dockerfile.app
     depends_on:
-      - chromadb
+      chromadb:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       HF_TOKEN: ${HF_TOKEN}
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN}
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
-      PDF_PATH: /data/book.pdf
+      PDF_PATH: /app/data/converted/glycobiology.txt
+      DATA_DIR: /app/data
     volumes:
-      - ./Essential_of_Glycobiology_4E_EPUB_V5_InterVenn.pdf:/data/book.pdf:ro
+      - ./data/converted:/app/data/converted:ro
       - hf_cache:/root/.cache/huggingface
     command: python -m Ingestion.pipeline
     restart: "no"

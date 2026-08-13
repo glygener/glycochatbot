@@ -1,8 +1,13 @@
 import os
+import sys
 from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
+
+PACKAGE_ROOT = Path(__file__).resolve().parent.parent
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")

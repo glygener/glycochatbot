@@ -1,3 +1,2 @@
-from .pipeline import IngestionPipeline
-
-__all__ = ["IngestionPipeline"]
+# Keep this module import-light. Importing IngestionPipeline here caused a
+# circular import: query.config -> Ingestion -> retrieval -> query.config
