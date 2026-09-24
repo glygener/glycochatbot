@@ -1,0 +1,7 @@
+CONTEXT:
+{context}
+
+USER QUESTION:
+{question}
+
+Return JSON only. No markdown. No text outside JSON.

@@ -1,0 +1,7 @@
+CONTEXT:
+{context}
+
+USER QUESTION:
+{question}
+
+Return a single JSON object only. No markdown fences. No commentary.

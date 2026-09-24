@@ -24,7 +24,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: docker/Dockerfile.app
+      dockerfile: apps/backend/Dockerfile
     depends_on:
       chromadb:
         condition: service_healthy
@@ -36,6 +36,8 @@ services:
       HF_TOKEN: ${HF_TOKEN}
       HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN}
       GROQ_API_KEY: ${GROQ_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_OPTION: ${LLM_OPTION:-free}
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
       DATA_DIR: /app/data
@@ -57,7 +59,7 @@ services:
   streamlit:
     build:
       context: .
-      dockerfile: docker/Dockerfile.streamlit
+      dockerfile: apps/frontend/Dockerfile
     depends_on:
       backend:
         condition: service_healthy

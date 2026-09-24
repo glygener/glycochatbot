@@ -20,8 +20,8 @@ A **citation-first Retrieval-Augmented Generation (RAG) chatbot** for glycobiolo
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Configuration Reference](#configuration-reference)
+- [Choosing the LLM](#choosing-the-llm)
 - [Using the Streamlit UI](#using-the-streamlit-ui)
-- [CLI (Optional)](#cli-optional)
 - [How It Works Internally](#how-it-works-internally)
 - [Data and Git](#data-and-git)
 - [What's Implemented vs Planned](#whats-implemented-vs-planned)
@@ -38,7 +38,7 @@ GlyGen AI Chatbot answers glycobiology questions using only retrieved textbook p
 | **UI** | Streamlit → HTTP client (`GLYGEN_API_URL`) |
 | **Backend** | FastAPI + `ChatOrchestrator` + RAG + SQLite |
 | **Vectors** | ChromaDB (embedded locally, or HTTP server in Docker) |
-| **LLM** | Groq `llama-3.1-8b-instant` |
+| **LLM** | Groq (free default) or OpenAI, selected by `LLM_OPTION` |
 | **Embeddings / rerank** | HuggingFace MiniLM + BGE reranker |
 
 **Four Docker containers (optional):**
@@ -63,7 +63,7 @@ GlyGen AI Chatbot answers glycobiology questions using only retrieved textbook p
 
 ```bash
 cp .env.example .env
-# Edit .env with HF_TOKEN and GROQ_API_KEY
+# Edit .env with HF_TOKEN, GROQ_API_KEY, and optionally OPENAI_API_KEY / LLM_OPTION
 
 docker compose -f docker-compose.ingest.yml up --build
 docker compose -f docker-compose.app.yml up --build
@@ -74,22 +74,30 @@ Open **http://localhost:8501**
 ### Option B — Local (no Docker)
 
 ```bash
-pip install -r requirements.txt
+pip install -r apps/backend/requirements.txt
+pip install -r apps/ingestion/requirements.txt
+pip install -r apps/frontend/requirements.txt
 cp .env.example .env   # add keys
-# Place PDF at project root
-cd src/glygen-chatbot
-python -m Ingestion.pipeline
-# Terminal 1:
+# Place PDF at project root or text under data/converted/
+
+# Ingest
+$env:PYTHONPATH = "$PWD\packages;$PWD\apps\ingestion\src"
+python -m ingestion.pipeline
+
+# Terminal 1 — backend
+$env:PYTHONPATH = "$PWD\packages;$PWD\apps\backend\src"
 uvicorn api.server:app --reload --host 127.0.0.1 --port 8000
-# Terminal 2:
-streamlit run api/streamlit_app.py
+
+# Terminal 2 — UI
+cd apps/frontend/src
+streamlit run app.py
 ```
 
 ---
 
 ## Get API Keys
 
-You need **two** keys. Create a free account on each site, then copy the token into `.env`.
+You need a **HuggingFace** token and a **chat LLM** key. The default chat model is Groq (`LLM_OPTION=free`). OpenAI is optional.
 
 ### 1. HuggingFace token (`HF_TOKEN`)
 
@@ -104,7 +112,7 @@ Used to download embedding and reranker models.
 
 ### 2. Groq API key (`GROQ_API_KEY`)
 
-Used for LLM answer generation (`llama-3.1-8b-instant`).
+Used for the default (free) LLM answer generation (`openai/gpt-oss-20b`).
 
 | Step | Link / action |
 |------|----------------|
@@ -114,6 +122,15 @@ Used for LLM answer generation (`llama-3.1-8b-instant`).
 
 **Never commit `.env`.** It is listed in `.gitignore`.
 
+### 3. OpenAI API key (`OPENAI_API_KEY`) — only if `LLM_OPTION=openai`
+
+| Step | Link / action |
+|------|----------------|
+| Sign up / log in | [https://platform.openai.com/](https://platform.openai.com/) |
+| Create API key | [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| Put in `.env` | `OPENAI_API_KEY=sk-...` |
+| Select model | `LLM_OPTION=openai` |
+
 ---
 
 ## Prerequisites
@@ -122,7 +139,7 @@ Used for LLM answer generation (`llama-3.1-8b-instant`).
 
 - **Python 3.11+**
 - **Git**
-- **HF_TOKEN** and **GROQ_API_KEY** (see above)
+- **HF_TOKEN** and **GROQ_API_KEY** (see above). Add **OPENAI_API_KEY** only if you set `LLM_OPTION=openai`.
 - Textbook PDF at project root:  
   `Essential_of_Glycobiology_4E_EPUB_V5_InterVenn.pdf`  
   (not in the GitHub repo — you must add it yourself)
@@ -168,7 +185,9 @@ source .venv/bin/activate
 ### Step 3 — Install Python dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r apps/backend/requirements.txt
+pip install -r apps/ingestion/requirements.txt
+pip install -r apps/frontend/requirements.txt
 ```
 
 ### Step 4 — Get API keys and create `.env`
@@ -191,6 +210,8 @@ cp .env.example .env
 ```env
 HF_TOKEN=hf_your_token_here
 GROQ_API_KEY=gsk_your_groq_key_here
+OPENAI_API_KEY=sk_your_openai_key_here
+LLM_OPTION=free
 GLYGEN_API_URL=http://127.0.0.1:8000
 ```
 
@@ -206,18 +227,20 @@ PDFs and `data/` are gitignored and are **not** pushed to GitHub.
 
 ### Step 6 — Ingest the textbook (one-time)
 
+From the project root, with the venv active:
+
 ```bash
-cd src/glygen-chatbot
-python -m Ingestion.pipeline
+# Windows PowerShell
+$env:PYTHONPATH = "$PWD\packages;$PWD\apps\ingestion\src"
+python -m ingestion.pipeline
 ```
 
-This loads the PDF, chunks it (~1000 chars / 200 overlap), embeds with MiniLM, and stores vectors in `data/chroma/` (collection `glyco_corpus`). First run downloads HuggingFace models.
+This loads the PDF or `data/converted/` text, chunks it (~1000 chars / 200 overlap), embeds with MiniLM, and stores vectors in `data/chroma/` (collection `glyco_corpus`). First run downloads HuggingFace models.
 
 ### Step 7 — Start the backend
 
-From `src/glygen-chatbot`:
-
 ```bash
+$env:PYTHONPATH = "$PWD\packages;$PWD\apps\backend\src"
 uvicorn api.server:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -230,8 +253,8 @@ uvicorn api.server:app --reload --host 127.0.0.1 --port 8000
 Open a **second** terminal, activate `.venv`, then:
 
 ```bash
-cd src/glygen-chatbot
-streamlit run api/streamlit_app.py
+cd apps/frontend/src
+streamlit run app.py
 ```
 
 Open **http://localhost:8501**
@@ -344,8 +367,9 @@ docker compose -f docker-compose.app.yml down -v
 |------|---------|
 | `docker-compose.ingest.yml` | ChromaDB + ingestion job |
 | `docker-compose.app.yml` | ChromaDB + backend + Streamlit |
-| `docker/Dockerfile.app` | Image for backend and ingestion |
-| `docker/Dockerfile.streamlit` | Lightweight Streamlit image |
+| `apps/ingestion/Dockerfile` | Ingest image (load → embed → Chroma) |
+| `apps/backend/Dockerfile` | FastAPI + RAG image |
+| `apps/frontend/Dockerfile` | Streamlit UI image |
 | `.dockerignore` | Keeps builds smaller |
 
 ---
@@ -391,12 +415,11 @@ Each chat message: Streamlit → `POST /api/v1/chat` → classify → RAG or loc
 - Streamlit UI over HTTP to FastAPI
 - PDF ingest → Chroma (`glyco_corpus`)
 - Retrieve top-20 → BGE rerank top-5 → confidence gate
-- Groq grounded JSON answers + page citations
+- Groq grounded JSON answers + page citations (or OpenAI when `LLM_OPTION=openai`)
 - Session memory (name, recap, follow-ups) in SQLite
 - Question routing: textbook / name / recap / out-of-scope
 - Docker: 4 containers, 2 compose files
 - Chroma HTTP mode (Docker) or embedded mode (local)
-- CLI one-shot RAG via `main.py`
 
 ---
 
@@ -404,13 +427,15 @@ Each chat message: Streamlit → `POST /api/v1/chat` → classify → RAG or loc
 
 | Component | File | Role |
 |-----------|------|------|
-| Streamlit UI | `api/streamlit_app.py` | Chat + sidebar |
-| HTTP client | `api/http_client.py` | Calls backend REST API |
-| FastAPI | `api/server.py` | REST entry point |
-| Orchestrator | `api/orchestrator.py` | Route + persist |
-| RAG | `RAG/pipeline.py` | Retrieve → rerank → gate → generate |
-| Chroma client | `retrieval/chroma_client.py` | HTTP or embedded |
-| Sessions | `session/store.py` | SQLite |
+| Streamlit UI | `apps/frontend/src/app.py` | Chat + sidebar |
+| HTTP client | `apps/frontend/src/client.py` | Calls backend REST API |
+| FastAPI | `apps/backend/src/api/server.py` | REST entry point |
+| Orchestrator | `apps/backend/src/api/orchestrator.py` | Route + persist |
+| RAG | `apps/backend/src/rag/pipeline.py` | Retrieve → rerank → gate → generate |
+| Chat LLM | `packages/llm/` + `config/llms.json` | Groq or OpenAI from `LLM_OPTION` |
+| Chroma client | `packages/glyco_chroma/` | HTTP or embedded (shared) |
+| Ingestion | `apps/ingestion/src/ingestion/pipeline.py` | PDF/txt → Chroma |
+| Sessions | `apps/backend/src/session/store.py` | SQLite |
 
 ### API endpoints
 
@@ -431,7 +456,7 @@ Each chat message: Streamlit → `POST /api/v1/chat` → classify → RAG or loc
 |-------|------------|
 | UI | Streamlit |
 | API | FastAPI + Uvicorn |
-| LLM | Groq `llama-3.1-8b-instant` |
+| LLM | Groq `openai/gpt-oss-20b` (default) or OpenAI `gpt-4o-mini` |
 | Embeddings | `sentence-transformers/all-MiniLM-L6-v2` |
 | Reranker | `BAAI/bge-reranker-base` |
 | Vector DB | ChromaDB |
@@ -444,28 +469,26 @@ Each chat message: Streamlit → `POST /api/v1/chat` → classify → RAG or loc
 ## Project Structure
 
 ```
-Glygen-AI-CHatbot/
-├── main.py
-├── plan.md
-├── README.md
-├── requirements.txt
-├── .env.example
-├── .gitignore                 # ignores .env, *.pdf, data/
-├── docker/
-│   ├── Dockerfile.app
-│   └── Dockerfile.streamlit
+glycochatbot/
+├── apps/
+│   ├── frontend/                 # C4 Streamlit (HTTP client only)
+│   ├── backend/                  # C2 FastAPI + RAG + SQLite
+│   └── ingestion/                # C1 one-shot corpus indexer
+├── packages/
+│   ├── glyco_chroma/             # shared Chroma HTTP/embedded client
+│   └── llm/                      # Groq / OpenAI chat clients + JSON loader
+├── config/
+│   └── llms.json                 # LLM options selected by LLM_OPTION
+├── prompts/
+│   ├── free/                     # Groq system/human prompts
+│   └── openai/                   # OpenAI system/human prompts
+├── docs/
+│   └── choose-llm.md             # how to switch models
 ├── docker-compose.ingest.yml
 ├── docker-compose.app.yml
-├── data/                      # local only (gitignored except .gitkeep)
-│   └── .gitkeep
-└── src/glygen-chatbot/
-    ├── api/
-    ├── RAG/
-    ├── session/
-    ├── retrieval/
-    ├── generation/
-    ├── query/
-    └── Ingestion/
+├── data/                         # local only (gitignored except .gitkeep)
+├── .env.example
+└── README.md
 ```
 
 ---
@@ -475,11 +498,30 @@ Glygen-AI-CHatbot/
 | Variable | Required | Used by | Description |
 |----------|----------|---------|-------------|
 | `HF_TOKEN` | Yes | Ingest, Backend | HuggingFace — [create token](https://huggingface.co/settings/tokens) |
-| `GROQ_API_KEY` | Yes | Backend | Groq — [create key](https://console.groq.com/keys) |
+| `GROQ_API_KEY` | Yes for `LLM_OPTION=free` | Backend | Groq — [create key](https://console.groq.com/keys) |
+| `OPENAI_API_KEY` | Yes for `LLM_OPTION=openai` | Backend | OpenAI — [create key](https://platform.openai.com/api-keys) |
+| `LLM_OPTION` | No (default `free`) | Backend | Key in `config/llms.json`: `free` or `openai` |
 | `GLYGEN_API_URL` | Streamlit | UI | Backend URL (`http://127.0.0.1:8000` local; `http://backend:8000` in Docker) |
 | `CHROMA_HOST` / `CHROMA_PORT` | Docker | Ingest, Backend | Set by compose; omit for local embedded Chroma |
 | `PDF_PATH` | Docker ingest | Ingestion | PDF path inside container |
 | `DATA_DIR` | Docker app | Backend | SQLite / data directory |
+
+See [`docs/choose-llm.md`](docs/choose-llm.md) for the JSON catalog and prompt folders.
+
+---
+
+## Choosing the LLM
+
+Set `LLM_OPTION` in `.env`. If it is missing, the app uses **`free`**.
+
+| `LLM_OPTION` | Chat model | Used for |
+|--------------|------------|----------|
+| `free` | Groq `openai/gpt-oss-20b` | Response generation |
+| `openai` | OpenAI `gpt-4o-mini` | Response generation |
+
+Ingest embeddings always use MiniLM, even when `LLM_OPTION=openai`. Ranking stays BGE (not an LLM).
+
+Change models, temperatures, or prompt paths in `config/llms.json` without editing Python.
 
 ---
 
@@ -499,19 +541,6 @@ Glygen-AI-CHatbot/
 
 ---
 
-## CLI (Optional)
-
-After local ingest (embedded Chroma):
-
-```bash
-# From project root, with venv active
-python main.py "What is glycosylation?"
-```
-
-Prints JSON `RAGResponse`. No sessions / no Streamlit.
-
----
-
 ## How It Works Internally
 
 ### Ingestion
@@ -520,7 +549,7 @@ Load PDF → chunk (1000/200) → embed → store in `glyco_corpus`.
 
 ### RAG
 
-Normalize → similarity k=20 → BGE top-5 → gate (min score -2.0) → Groq JSON → validate citations.
+Normalize → similarity k=20 → BGE top-5 → gate (min score -2.0) → selected LLM JSON → validate citations.
 
 ### Question types
 
@@ -530,9 +559,10 @@ Normalize → similarity k=20 → BGE top-5 → gate (min score -2.0) → Groq J
 
 | Setting | Value |
 |---------|-------|
-| Embedding | `all-MiniLM-L6-v2` |
-| Reranker | `bge-reranker-base` |
-| LLM | `llama-3.1-8b-instant` |
+| Embedding | `all-MiniLM-L6-v2` (always; not switched by `LLM_OPTION`) |
+| Reranker | `bge-reranker-base` (always BGE) |
+| LLM (default) | Groq `openai/gpt-oss-20b` when `LLM_OPTION` is unset or `free` |
+| LLM (paid) | OpenAI `gpt-4o-mini` when `LLM_OPTION=openai` |
 | Temperature | `0.0` |
 
 ---
@@ -558,7 +588,8 @@ Only `data/.gitkeep` is kept so the folder exists after clone. You must add the 
 - SQLite sessions
 - Docker 4-container / 2-compose setup
 - Chroma HTTP + embedded modes
-- README / plan for current architecture
+- Configurable chat LLM (`LLM_OPTION` + `config/llms.json` + `prompts/`)
+- README for local and Docker run
 
 ### Local vs Docker
 
@@ -574,8 +605,6 @@ Only `data/.gitkeep` is kept so the folder exists after clone. You must add the 
 - Evaluation question bank
 - Rate limiting / CI/CD / cloud pilot
 
-See [`plan.md`](plan.md) for the full architecture plan.
-
 ---
 
 ## Troubleshooting
@@ -584,6 +613,7 @@ See [`plan.md`](plan.md) for the full architecture plan.
 |---------|-----|
 | `docker` not recognized | Install/start [Docker Desktop](https://www.docker.com/products/docker-desktop/), open a new terminal |
 | Missing `HF_TOKEN` / `GROQ_API_KEY` | Create keys at HuggingFace and Groq links above; put them in `.env` |
+| Missing `OPENAI_API_KEY` with `LLM_OPTION=openai` | Set `OPENAI_API_KEY` or switch back to `LLM_OPTION=free` |
 | PDF not found | Place `Essential_of_Glycobiology_4E_EPUB_V5_InterVenn.pdf` at project root |
 | Streamlit can't reach backend | Local: start uvicorn first; set `GLYGEN_API_URL=http://127.0.0.1:8000` |
 | Chroma empty in Docker app | Run `docker-compose.ingest.yml` before `docker-compose.app.yml` |
@@ -593,4 +623,4 @@ See [`plan.md`](plan.md) for the full architecture plan.
 
 ## Acknowledgments
 
-Built for glycomics education using *Essentials of Glycobiology*. Powered by Groq, HuggingFace, LangChain, ChromaDB, FastAPI, Streamlit, and Docker.
+Built for glycomics education using *Essentials of Glycobiology*. Powered by Groq, OpenAI, HuggingFace, LangChain, ChromaDB, FastAPI, Streamlit, and Docker.

@@ -14,14 +14,10 @@ __pycache__
 data/chroma
 data/chat.db
 
-# Notebooks and docs (not needed in images)
-*.ipynb
-plan.md
-
 # IDE
 .cursor
 .vscode
 .idea
 
-# Large PDF (mounted as volume at runtime)
+# Large PDF
 *.pdf
