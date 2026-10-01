@@ -17,19 +17,19 @@ class GlygenApiClient:
         return response.json()
 
     def create_session(self) -> dict:
-        response = requests.post(self._url("/api/v1/sessions"), timeout=self.timeout)
+        response = requests.post(self._url("/api/v1/sessions"), timeout=10)
         response.raise_for_status()
         return response.json()
 
     def list_sessions(self) -> list[dict]:
-        response = requests.get(self._url("/api/v1/sessions"), timeout=self.timeout)
+        response = requests.get(self._url("/api/v1/sessions"), timeout=10)
         response.raise_for_status()
         return response.json()
 
     def get_messages(self, session_id: str) -> dict:
         response = requests.get(
             self._url(f"/api/v1/sessions/{session_id}/messages"),
-            timeout=self.timeout,
+            timeout=10,
         )
         response.raise_for_status()
         return response.json()

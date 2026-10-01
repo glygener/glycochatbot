@@ -86,7 +86,7 @@ python -m ingestion.pipeline
 
 # Terminal 1 — backend
 $env:PYTHONPATH = "$PWD\packages;$PWD\apps\backend\src"
-uvicorn api.server:app --reload --host 127.0.0.1 --port 8000
+python -m api.server
 
 # Terminal 2 — UI
 cd apps/frontend/src
@@ -241,7 +241,7 @@ This loads the PDF or `data/converted/` text, chunks it (~1000 chars / 200 overl
 
 ```bash
 $env:PYTHONPATH = "$PWD\packages;$PWD\apps\backend\src"
-uvicorn api.server:app --reload --host 127.0.0.1 --port 8000
+python -m api.server
 ```
 
 - API: http://127.0.0.1:8000  

@@ -21,10 +21,19 @@ from session.store import SessionStore
 
 
 class ChatOrchestrator:
-    def __init__(self, rag: RAGPipeline, store: SessionStore) -> None:
-        self.rag = rag
+    def __init__(self, store: SessionStore, rag: RAGPipeline | None = None) -> None:
         self.store = store
-        self.config = rag.config
+        self._rag = rag
+        self.config = rag.config if rag is not None else RAGConfig.from_env()
+
+    @property
+    def rag(self) -> RAGPipeline:
+        if self._rag is None:
+            from api.dependencies import get_rag_pipeline
+
+            self._rag = get_rag_pipeline()
+            self.config = self._rag.config
+        return self._rag
 
     def chat(self, session_id: str, question: str) -> ChatResponse:
         session = self.store.get_session(session_id)

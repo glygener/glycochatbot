@@ -17,7 +17,7 @@
     "openai": {
       "display_name": "OpenAI (paid)",
       "provider": "openai",
-      "model": "gpt-4o-mini",
+      "model": "gpt-4o",
       "temperature": 0.0,
       "chunk_size": 1000,
       "chunk_overlap": 200,

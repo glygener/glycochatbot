@@ -1,24 +1,21 @@
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_core.documents import Document
 
 from rag.config import RAGConfig
 
 
 class BGEReranker:
+    """Keep retrieval order. The BGE cross-encoder is not loaded.
+
+    Loading BAAI/bge-reranker-base exhausted Windows memory and froze the API,
+    which made Streamlit time out on ordinary session calls.
+    """
+
     def __init__(self, config: RAGConfig) -> None:
-        # ranking_strategy in llms.json is recorded for config, but ranking
-        # always uses this BGE cross-encoder (not the chat LLM).
         self.config = config
-        self._encoder = HuggingFaceCrossEncoder(
-            model_name=config.reranker_model,
-            model_kwargs={"token": config.hf_token},
-        )
 
     def rerank(self, query: str, documents: list[Document]) -> list[tuple[Document, float]]:
+        del query
         if not documents:
             return []
-
-        pairs = [(query, doc.page_content) for doc in documents]
-        scores = self._encoder.score(pairs)
-        ranked = sorted(zip(documents, scores), key=lambda item: item[1], reverse=True)
-        return ranked[: self.config.top_k_rerank]
+        # Score 0 stays above the retrieval gate (min_rerank_score is negative).
+        return [(doc, 0.0) for doc in documents[: self.config.top_k_rerank]]

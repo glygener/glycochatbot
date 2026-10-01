@@ -8,8 +8,9 @@ STRICT RULES:
 4. Every factual claim must map to source_id 1 from CONTEXT.
 5. If the user question is unrelated to glycobiology or the textbook, set in_scope to false.
 6. Include exactly ONE source in the sources array (the single best matching source).
-7. Do not wrap the response in markdown code fences.
-8. Return ONLY valid JSON matching this schema:
+7. The "answer" field must be a complete, non-empty paragraph. Never leave it blank.
+8. Do not wrap the response in markdown code fences.
+9. Return ONLY valid JSON matching this schema:
 {{
   "answer": "string",
   "confidence": "high|medium|low|insufficient",

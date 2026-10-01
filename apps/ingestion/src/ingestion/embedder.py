@@ -8,6 +8,5 @@ def create_embeddings(config: IngestionConfig) -> HuggingFaceEmbeddings:
     # LLM_OPTION only selects the chat model for response generation.
     return HuggingFaceEmbeddings(
         model_name=config.embedding_model,
-        model_kwargs={"token": config.hf_token},
         encode_kwargs={"normalize_embeddings": True},
     )

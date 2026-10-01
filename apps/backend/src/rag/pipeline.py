@@ -17,9 +17,9 @@ class RAGPipeline:
         self.query_processor = QueryProcessor()
 
         # Retrieval embeddings always use MiniLM from ingest settings, not LLM_OPTION.
+        # HF_TOKEN is already in the environment from RAGConfig.from_env().
         embeddings = HuggingFaceEmbeddings(
             model_name=self.config.embedding_model,
-            model_kwargs={"token": self.config.hf_token},
             encode_kwargs={"normalize_embeddings": True},
         )
         vectorstore = load_vectorstore(self.config, embeddings)
