@@ -4,4 +4,5 @@ CONTEXT:
 USER QUESTION:
 {question}
 
+Follow the paragraph outline. Use only CONTEXT.
 Return a single JSON object only. No markdown fences. No commentary.

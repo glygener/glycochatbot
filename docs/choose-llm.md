@@ -13,7 +13,7 @@ LLM_OPTION=free
 | Value | Model | Key required |
 |-------|--------|----------------|
 | `free` (default if unset or empty) | Groq `openai/gpt-oss-20b` | `GROQ_API_KEY` |
-| `openai` | OpenAI `gpt-4o-mini` | `OPENAI_API_KEY` |
+| `openai` | OpenAI `gpt-4o` | `OPENAI_API_KEY` |
 
 Restart the backend after changing `LLM_OPTION`. Ingestion does not need a restart for this value.
 
@@ -58,6 +58,8 @@ prompts/
 ```
 
 `{context}` and `{question}` in `human.txt` are filled at runtime. JSON examples in `system.txt` use doubled braces (`{{` / `}}`) so LangChain does not treat them as variables.
+
+The paid option uses these prompts to ask for multi-paragraph answers. Choices, guard rails, and the OpenAI client are recorded in [multi-sentence-responses.md](multi-sentence-responses.md).
 
 ## Source changes
 

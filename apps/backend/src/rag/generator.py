@@ -30,7 +30,14 @@ class AnswerGenerator:
         raw = self._message_text(self.llm.invoke(messages))
         data = self._pick_payload(raw)
         self._fill_empty_answer(data)
+        data["answer"] = self._paragraph_breaks(str(data.get("answer") or ""))
         return RAGResponse.model_validate(data)
+
+    @staticmethod
+    def _paragraph_breaks(answer: str) -> str:
+        text = answer.replace("\\n", "\n").replace("<blank line>", "\n\n")
+        paragraphs = [part.strip() for part in text.split("\n\n")]
+        return "\n\n".join(part for part in paragraphs if part)
 
     @staticmethod
     def _message_text(message) -> str:

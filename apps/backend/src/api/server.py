@@ -42,7 +42,7 @@ def main() -> None:
         "api.server:app",
         host="127.0.0.1",
         port=8000,
-        reload=True,
+        reload=False,
         reload_dirs=[
             str(project / "apps" / "backend" / "src"),
             str(project / "packages"),

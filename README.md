@@ -534,7 +534,7 @@ Change models, temperatures, or prompt paths in `config/llms.json` without editi
 | You say | Behavior |
 |---------|----------|
 | "My name is Alex" | Saves name (no LLM) |
-| "What is glycosylation?" | Full RAG + page citation |
+| "What is glycosylation?" | Full RAG + book, chapter, and link citation |
 | "Tell me more about that" | Follow-up with prior context |
 | "What did I ask?" | Session recap |
 | "What's the weather?" | Out-of-scope refusal |
@@ -545,7 +545,9 @@ Change models, temperatures, or prompt paths in `config/llms.json` without editi
 
 ### Ingestion
 
-Load PDF → chunk (1000/200) → embed → store in `glyco_corpus`.
+Load PDF or text → detect chapter headings → chunk (1000/200) → embed → replace `glyco_corpus`.
+
+Each chunk stores `book_name`, and, when the chapter is known, `chapter_number`, `chapter_name`, and `chapter_url` (`https://www.ncbi.nlm.nih.gov/books/n/glyco4`). Answers copy those fields into the source line. If a chunk has no chapter metadata, the footer stays `Essentials of Glycobiology`, Page …. Re-run ingestion after this change so existing chunks pick up the new fields. Field list: [docs/source-metadata.md](docs/source-metadata.md).
 
 ### RAG
 
@@ -562,7 +564,7 @@ Normalize → similarity k=20 → BGE top-5 → gate (min score -2.0) → select
 | Embedding | `all-MiniLM-L6-v2` (always; not switched by `LLM_OPTION`) |
 | Reranker | `bge-reranker-base` (always BGE) |
 | LLM (default) | Groq `openai/gpt-oss-20b` when `LLM_OPTION` is unset or `free` |
-| LLM (paid) | OpenAI `gpt-4o-mini` when `LLM_OPTION=openai` |
+| LLM (paid) | OpenAI `gpt-4o` when `LLM_OPTION=openai` |
 | Temperature | `0.0` |
 
 ---

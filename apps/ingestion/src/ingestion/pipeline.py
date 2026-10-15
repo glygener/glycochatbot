@@ -1,3 +1,4 @@
+import chromadb
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -5,6 +6,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from glyco_chroma.settings import ChromaSettings
 from glyco_chroma.store import load_vectorstore, store_documents
 
+from .chapters import annotate_documents
 from .chunker import chunk_documents
 from .config import IngestionConfig
 from .embedder import create_embeddings
@@ -27,7 +29,7 @@ class IngestionPipeline:
         return load_documents(self.config.pdf_path)
 
     def chunk(self, documents: list[Document]) -> list[Document]:
-        return chunk_documents(documents, self.config)
+        return chunk_documents(annotate_documents(documents), self.config)
 
     def get_embeddings(self) -> HuggingFaceEmbeddings:
         if self.embeddings is None:
@@ -36,7 +38,9 @@ class IngestionPipeline:
 
     def store(self, chunks: list[Document]) -> Chroma:
         embeddings = self.get_embeddings()
-        self.vectorstore = store_documents(self._chroma_settings(), embeddings, chunks)
+        settings = self._chroma_settings()
+        _replace_collection(settings)
+        self.vectorstore = store_documents(settings, embeddings, chunks)
         return self.vectorstore
 
     def load_vectorstore(self) -> Chroma:
@@ -51,6 +55,24 @@ class IngestionPipeline:
     def similarity_search(self, query: str, k: int = 3) -> list[Document]:
         vectorstore = self.vectorstore or self.load_vectorstore()
         return vectorstore.similarity_search(query, k=k)
+
+
+def _replace_collection(settings) -> None:
+    """Drop the previous index so a re-ingest does not keep chunks without chapter metadata."""
+    try:
+        if settings.use_http:
+            client = chromadb.HttpClient(host=settings.host, port=settings.port)
+        else:
+            if settings.chroma_dir is None:
+                return
+            settings.chroma_dir.mkdir(parents=True, exist_ok=True)
+            client = chromadb.PersistentClient(path=str(settings.chroma_dir))
+        client.delete_collection(settings.collection_name)
+    except Exception as exc:
+        message = str(exc).lower()
+        if "does not exist" in message or "not found" in message:
+            return
+        raise
 
 
 if __name__ == "__main__":

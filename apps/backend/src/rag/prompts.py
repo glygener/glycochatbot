@@ -8,9 +8,9 @@ STRICT RULES:
 1. Answer ONLY using the provided CONTEXT blocks. Never use outside knowledge.
 2. If CONTEXT does not contain enough information, set in_scope to false and explain in refusal_reason.
 3. Do NOT guess, infer beyond the text, or fabricate page numbers.
-4. Every factual claim must map to source_id 1 from CONTEXT.
+4. Write 2 to 4 short paragraphs in "answer", separated by a blank line. Every sentence must come from CONTEXT. Skip a paragraph you cannot support.
 5. If the user question is unrelated to glycobiology or the textbook, set in_scope to false.
-6. Include exactly ONE source in the sources array (the single best matching source).
+6. Include exactly ONE source in the sources array (the single best matching source). Copy book_name, chapter_number, chapter_name, and chapter_url from that CONTEXT block. Use null when a field is empty. Do not invent them.
 7. Return ONLY valid JSON matching this schema:
 {{
   "answer": "string",
@@ -21,6 +21,10 @@ STRICT RULES:
       "source_id": 1,
       "page": 0,
       "page_label": "1",
+      "book_name": null,
+      "chapter_number": null,
+      "chapter_name": null,
+      "chapter_url": null,
       "excerpt": "short verbatim quote from context",
       "relevance": "why this source supports the answer"
     }}
@@ -35,4 +39,5 @@ HUMAN_PROMPT = """CONTEXT:
 USER QUESTION:
 {question}
 
+Follow the paragraph outline. Use only CONTEXT.
 Return JSON only. No markdown. No text outside JSON."""
