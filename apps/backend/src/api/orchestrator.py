@@ -35,8 +35,8 @@ class ChatOrchestrator:
             self.config = self._rag.config
         return self._rag
 
-    def chat(self, session_id: str, question: str) -> ChatResponse:
-        session = self.store.get_session(session_id)
+    def chat(self, session_id: str, question: str, user_id: str) -> ChatResponse:
+        session = self.store.get_session(session_id, user_id=user_id)
         if session is None:
             raise HTTPException(status_code=404, detail="Session not found.")
 
@@ -179,8 +179,8 @@ class ChatOrchestrator:
             refusal_reason=reason,
         )
 
-    def get_session_messages(self, session_id: str) -> SessionMessagesResponse:
-        session = self.store.get_session(session_id)
+    def get_session_messages(self, session_id: str, user_id: str) -> SessionMessagesResponse:
+        session = self.store.get_session(session_id, user_id=user_id)
         if session is None:
             raise HTTPException(status_code=404, detail="Session not found.")
 

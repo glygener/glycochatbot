@@ -1,6 +1,23 @@
 name: glygen
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: glyco
+      POSTGRES_PASSWORD: glyco
+      POSTGRES_DB: glycochat
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glyco -d glycochat"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
   chromadb:
     image: chromadb/chroma:0.6.3
     ports:
@@ -26,6 +43,8 @@ services:
       context: .
       dockerfile: apps/backend/Dockerfile
     depends_on:
+      postgres:
+        condition: service_healthy
       chromadb:
         condition: service_healthy
     env_file:
@@ -41,6 +60,8 @@ services:
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
       DATA_DIR: /app/data
+      DATABASE_URL: postgresql://glyco:glyco@postgres:5432/glycochat
+      AUTH_SECRET: ${AUTH_SECRET:-glycochat-dev-secret-change-me-32b}
     volumes:
       - chat_data:/app/data
       - hf_cache:/root/.cache/huggingface
@@ -54,7 +75,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
-      start_period: 20s
+      start_period: 40s
 
   streamlit:
     build:
@@ -71,5 +92,6 @@ services:
 volumes:
   chroma_data:
     name: glygen_chroma_data
+  postgres_data:
   chat_data:
   hf_cache:

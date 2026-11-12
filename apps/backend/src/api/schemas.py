@@ -3,6 +3,31 @@ from pydantic import BaseModel, Field
 from rag.schemas import RAGResponse, SourceCitation
 
 
+class RegisterRequest(BaseModel):
+    first_name: str = Field(min_length=1, max_length=120)
+    last_name: str = Field(min_length=1, max_length=120)
+    username: str = Field(min_length=3, max_length=32)
+    email: str | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=32)
+
+
+class UserResponse(BaseModel):
+    user_id: str
+    username: str
+    first_name: str
+    last_name: str
+    email: str | None = None
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
 class ChatRequest(BaseModel):
     session_id: str
     question: str = Field(min_length=1)
