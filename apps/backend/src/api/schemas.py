@@ -12,6 +12,7 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     username: str = Field(min_length=3, max_length=32)
+    browser_id: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -20,6 +21,7 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     email: str | None = None
+    is_enabled: bool = True
 
 
 class AuthResponse(BaseModel):

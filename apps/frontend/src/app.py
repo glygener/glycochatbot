@@ -4,6 +4,7 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
+from browser_auth import clear_auth, hydrate_auth_from_browser, persist_auth
 from client import GlygenApiClient
 
 for parent in [Path(__file__).resolve().parent, *Path(__file__).resolve().parents]:
@@ -24,52 +25,28 @@ def get_api_client() -> GlygenApiClient:
     return GlygenApiClient()
 
 
-def render_auth(client: GlygenApiClient) -> None:
+def render_login(client: GlygenApiClient) -> None:
     st.title("GlyGen Chatbot")
-    st.caption("Sign in with your username, or create an account.")
+    st.caption("Sign in with your username.")
 
-    tab_login, tab_register = st.tabs(["Login", "Register"])
-
-    with tab_login:
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            submitted = st.form_submit_button("Sign in", use_container_width=True)
-        if submitted:
-            try:
-                result = client.login(username.strip())
-            except Exception as exc:
-                st.error(str(exc))
-            else:
-                st.session_state.access_token = result["access_token"]
-                st.session_state.user = result["user"]
-                st.session_state.pop("session_id", None)
-                st.session_state.messages = []
-                st.rerun()
-
-    with tab_register:
-        with st.form("register_form"):
-            first_name = st.text_input("First name")
-            last_name = st.text_input("Last name")
-            email = st.text_input("Email (Gmail)")
-            username = st.text_input("Username (unique)")
-            submitted = st.form_submit_button("Create account", use_container_width=True)
-        if submitted:
-            try:
-                result = client.register(
-                    first_name=first_name.strip(),
-                    last_name=last_name.strip(),
-                    username=username.strip(),
-                    email=email.strip() or None,
-                )
-            except Exception as exc:
-                st.error(str(exc))
-            else:
-                st.session_state.access_token = result["access_token"]
-                st.session_state.user = result["user"]
-                st.session_state.pop("session_id", None)
-                st.session_state.messages = []
-                st.success("Account created. You are signed in.")
-                st.rerun()
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        submitted = st.form_submit_button("Sign in", use_container_width=True)
+    if submitted:
+        try:
+            result = client.login(
+                username.strip(),
+                browser_id=st.session_state.get("browser_id"),
+            )
+        except Exception as exc:
+            st.error(str(exc))
+        else:
+            st.session_state.access_token = result["access_token"]
+            st.session_state.user = result["user"]
+            persist_auth(result["access_token"], result["user"])
+            st.session_state.pop("session_id", None)
+            st.session_state.messages = []
+            st.rerun()
 
 
 def ensure_session(client: GlygenApiClient) -> str:
@@ -101,8 +78,7 @@ def render_chat(client: GlygenApiClient) -> None:
         st.write(f"**{user['first_name']} {user['last_name']}**")
         st.caption(f"@{user['username']}")
         if st.button("Log out", use_container_width=True):
-            for key in ("access_token", "user", "session_id", "messages"):
-                st.session_state.pop(key, None)
+            clear_auth()
             st.rerun()
 
         if st.button("New chat", use_container_width=True):
@@ -168,14 +144,24 @@ def render_chat(client: GlygenApiClient) -> None:
 
 
 def main() -> None:
+    hydrate_auth_from_browser()
     client = get_api_client()
+
     token = st.session_state.get("access_token")
-    if not token or "user" not in st.session_state:
-        render_auth(client)
+    if token and "user" in st.session_state:
+        client.set_token(token)
+        try:
+            me = client.me()
+            st.session_state.user = me
+            persist_auth(token, me)
+        except Exception:
+            clear_auth()
+            render_login(client)
+            return
+        render_chat(client)
         return
 
-    client.set_token(token)
-    render_chat(client)
+    render_login(client)
 
 
 if __name__ == "__main__":

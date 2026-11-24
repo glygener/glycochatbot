@@ -4,14 +4,16 @@ Username-only login with Postgres-backed sessions.
 
 ## Flow
 
-1. **Register** — first name, last name, email (optional), unique username  
-2. **Login** — username only (no password)  
-3. Chat UI shows **Hello, {first_name}!**  
-4. Sidebar lists **only that user’s** sessions  
-5. **New chat** / **Delete** per session  
-6. Session memory (“My name is XYZ”) stays on that session only  
+1. **Login** (`/`) — username only (no password). Register is **not** shown here.  
+2. **Register** (`/register`) — open manually; first name, last name, email, unique username. Creates user with `is_enabled=true`.  
+3. Login fails if `is_enabled=false` (Contact Administrator message).  
+4. Browser **localStorage** keeps JWT until **Log out**; reopen app restores the session.  
+5. Chat UI shows **Hello, {first_name}!**  
+6. Sidebar lists **only that user’s** sessions  
+7. **New chat** / **Delete** per session  
+8. Session memory (“My name is XYZ”) stays on that session only  
 
-Same username on another browser loads the same sessions (owned by `user_id` in Postgres).
+Same username on another browser loads the same sessions (owned by `user_id` in Postgres). `browser_uuids` tracks browser ids from localStorage.
 
 ## Docker Postgres
 

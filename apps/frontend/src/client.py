@@ -52,10 +52,13 @@ class GlygenApiClient:
             raise RuntimeError(detail)
         return response.json()
 
-    def login(self, username: str) -> dict:
+    def login(self, username: str, browser_id: str | None = None) -> dict:
+        payload: dict = {"username": username}
+        if browser_id:
+            payload["browser_id"] = browser_id
         response = requests.post(
             self._url("/api/v1/auth/login"),
-            json={"username": username},
+            json=payload,
             timeout=15,
         )
         if response.status_code >= 400:

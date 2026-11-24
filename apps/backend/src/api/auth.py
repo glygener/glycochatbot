@@ -48,4 +48,12 @@ def get_current_user(
     user = UserStore().get_by_id(str(user_id))
     if user is None:
         raise HTTPException(status_code=401, detail="User not found.")
+    if not user.is_enabled:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Your User ID does not have access to this application. "
+                "Contact your system administrator to enable your account."
+            ),
+        )
     return user

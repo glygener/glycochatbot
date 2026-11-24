@@ -9,7 +9,7 @@ import pg8000.dbapi
 def database_url() -> str:
     return os.getenv(
         "DATABASE_URL",
-        "postgresql://glyco:glyco@127.0.0.1:5432/glycochat",
+        "postgresql://glyco:glyco@127.0.0.1:5433/glycochat",
     )
 
 
@@ -61,7 +61,26 @@ def _ensure_schema() -> bool:
                 first_name VARCHAR(120) NOT NULL,
                 last_name VARCHAR(120) NOT NULL,
                 email VARCHAR(255) UNIQUE,
+                is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cursor.execute(
+            """
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS is_enabled BOOLEAN NOT NULL DEFAULT TRUE
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS browser_uuids (
+                browser_id UUID PRIMARY KEY,
+                user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+                browser_info VARCHAR(500),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                is_active BOOLEAN NOT NULL DEFAULT TRUE
             )
             """
         )
